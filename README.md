@@ -37,7 +37,7 @@ Bu layihə urban mühitdə hərəkət edən avtonom sistem üçün object detect
 
 **1. Repo-nu clone et:**
 ```bash
-git clone https://github.com/Nahid-droid/project-Asan_xidm-t-.git
+git clone https://github.com/Nahid-droid/VOC_Detection_Nahid_Mammadov.git
 cd project
 ```
 
