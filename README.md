@@ -306,6 +306,7 @@ Bu layihə lokal Windows mühitində (CPU) icra edildi. Bunun bir neçə əsasla
 
 **Nəticə:** 
 Training uzun çəkdi (~4 saat), amma mühit tam nəzarət altında idi, nəticələr etibarlı və reproducible oldu.
+
 ---
 
 ## Çətinliklər və Həllər
