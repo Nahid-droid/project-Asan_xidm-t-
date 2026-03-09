@@ -37,14 +37,14 @@ Bu layihə urban mühitdə hərəkət edən avtonom sistem üçün object detect
 
 **1. Repo-nu clone et:**
 ```bash
-git clone https://github.com/[username]/VOC_Detection_Nahid_Mammadov.git
-cd VOC_Detection_Nahid_Mammadov
+git clone https://github.com/Nahid-droid/project-Asan_xidm-t-.git
+cd project
 ```
 
 **2. Conda environment yarat:**
 ```bash
-conda create -n cv python=3.11
-conda activate cv
+conda create -n your_env python=3.11
+conda activate your_env
 ```
 
 **3. Asılılıqları qur:**
@@ -82,7 +82,7 @@ notebooks/03_evaluation.ipynb         # Qiymətləndirmə
 
 **Proses:**
 1. `01_data_prep.ipynb` run edilərək hər klasdan 100 şəkil seçildi və `data/images/train/` qovluğuna kopyalandı
-2. CVAT-da `VOC_Detection_Nahid_Mammadov` adlı project yaradıldı, 4 label əlavə edildi
+2. CVAT-da `VOC_Detection_Nahid_Mammadov` adlı project yaradıldı, 4 label əlavə edildi, bbox çəkilən zaman label-lar qarışdırılmasın deyə hər birinə ayrı rəng verildi
 3. `data/images/train/` qovluğundakı ~280 şəkil CVAT-a yükləndi
 4. Rectangle (bounding box) aləti ilə hər obyekt annotasiya edildi
 5. YOLO 1.1 formatında export edildi
@@ -90,11 +90,10 @@ notebooks/03_evaluation.ipynb         # Qiymətləndirmə
 **Annotasiya müddəti:** ~3 saat
 
 **Çətin annotasiya halları:**
-- Bəzi şəkillərdə hədəf obyektlər çox kiçik və ya uzaqda görünürdü — bu hallarda bbox mümkün qədər dəqiq çəkildi
+- Bəzi şəkillərdə hədəf obyektlər çox kiçik və ya uzaqda görünürdü — bu hallarda şəkil böyüdülərək bbox mümkün qədər dəqiq çəkildi
 - Bəzi şəkillərdə obyektlər bir-birinə girmiş (overlapping) vəziyyətdə idi — hər obyekt üçün ayrıca bbox çəkildi
 - Bəzi şəkillərdə hədəf klass ümumiyyətlə görünmürdü (məsələn, maşının içindən çəkilmiş şəkillər) — bu şəkillər annotasiya edilmədən keçildi
-- Val və test şəkilləri üçün annotasiyalar VOC XML-dən avtomatik çevrildi — yalnız train annotasiyaları əl ilə edildi
-
+- Val və test şəkilləri üçün annotasiyalar VOC XML-dən avtomatik çevrildi — qaydalarda qeyd edildiyi kimi yalnız train annotasiyaları manual edildi
 ---
 
 ## Model Seçimi
@@ -111,14 +110,54 @@ notebooks/03_evaluation.ipynb         # Qiymətləndirmə
 
 **Seçim əsaslandırması:**
 
-YOLOv8n seçildi çünki:
-- CPU-da RT-DETR-dən təxminən 2x daha sürətli training edir — məhdud hardware şəraitində praktiki üstünlük
-- Kiçik obyektlər (velosipedlər, motosikletlər) üçün güclüdür — urban mühit üçün vacibdir
-- Inference sürəti real-time avtonom sistem tələblərinə daha uyğundur
-- Kiçik dataset üzərində transformer modelləri CNN modellərinə nisbətən daha çox data tələb edir
+### Tapşırığın şərtləri və model seçimi məntiqi
 
-**RT-DETR-in üstünlükləri:** İzdihamlı şəhər səhnələrində kontekst anlayışı daha güclüdür, amma bu üstünlük böyük dataset və GPU ilə daha çox özünü göstərir.
+Model seçimi "ən güclü model" kriteriyasına deyil, **tapşırığın real şərtlərinə** əsaslanmalıdır. Bu tapşırıqda şərtlər aşağıdakı idi: 4 klass, ~400 şəkil, CPU mühiti, 1 həftə deadline. Bu şəraitdə ən vacib faktorlar sürət, yüngüllük və məhdud data ilə yaxşı ümumiləşmə qabiliyyətidir.
 
+### YOLOv8n nədir?
+
+YOLOv8n (You Only Look Once v8 nano) — Ultralytics tərəfindən hazırlanmış **one-stage, anchor-free CNN** detektordur. "Nano" versiyası ailəsinin ən yüngül modelidir (~3M parametr). One-stage arxitektura şəkli bir dəfə işlədir — lokalizasiya və klassifikasiya eyni anda həll edilir. Bu onu CPU-da praktiki edir.
+
+Model COCO dataseti üzərində pretrained weights ilə gəlir — yəni model artıq ümumi vizual xüsusiyyətlər öyrənib. Bizim tapşırıqda bu weights-dən fine-tuning edildi ki, model 4 hədəf klassı tanısın.
+
+### Alternativ model: RT-DETR-l
+
+RT-DETR-l (Real-Time Detection Transformer large) — transformer əsaslı detektordur (~32M parametr). Self-attention mexanizmi sayəsində şəkildəki hər bölgə digər bütün bölgələrlə əlaqəni hesablayır. Bu ona izdihamlı şəhər səhnələrində (bir kadrda çox sayda maşın, avtobus) güclü kontekst anlayışı verir.
+
+### Müqayisə
+
+| Meyar | YOLOv8n | RT-DETR-l |
+|---|---|---|
+| Arxitektura | One-stage CNN | Transformer encoder-decoder |
+| Parametr sayı | ~3M | ~32M |
+| CPU training (75 epoch) | ~4 saat | ~15+ saat |
+| Inference sürəti (CPU) | ~95 ms/şəkil | ~300+ ms/şəkil |
+| Kiçik dataset (~400 şəkil) | ✅ Uyğundur | ⚠️ Daha çox data tələb edir |
+| İzdihamlı səhnələr | ⚠️ Orta | ✅ Güclü |
+| Uzaq/kiçik obyektlər | ⚠️ Orta | ✅ Global attention ilə daha yaxşı |
+| Overfitting riski (az data) | Aşağı | Yüksək |
+
+### Trade-off-lar
+
+**YOLOv8n-in üstünlükləri bu tapşırıqda:**
+- 3M parametr — 400 şəkil ilə öyrətmək üçün optimaldir, overfitting riski azdır
+- CPU-da ~4 saatda training tamamlandı — praktiki və reproducible nəticə
+- Inference sürəti ~95ms — real-time avtonom sistem tələblərinə yaxındır
+- One-stage arxitektura sadədir, debug etmək asandır
+
+**YOLOv8n-in zəif tərəfləri:**
+- Lokal CNN feature-larına əsaslanır — bir kadrda çox sayda bir-birinə girmiş obyektlərdə RT-DETR-dən geri qalır
+- Global konteksti transformer qədər yaxşı anlamır — confusion matrix-dən göründüyü kimi motorbike-ı 16% hallarda bicycle ilə qarışdırır
+- Çox kiçik və uzaq obyektlərdə zəifdir — test setindəki bəzi şəkillərdə aşağı confidence göstərdi
+
+**RT-DETR-in bu tapşırıqda impraktik olmasının səbəbləri:**
+- 32M parametri 400 şəkil ilə öyrətmək underfitting və ya overfitting riskini artırır — transformer modelləri güclü nəticə üçün daha böyük dataset tələb edir
+- CPU-da ~15+ saat training — 1 həftəlik deadline şəraitində yenidən eksperiment aparmaq imkansızlaşır
+- Inference sürəti ~300ms — real-time avtonom sistem üçün qəbuledilməzdir
+
+### Nəticə
+
+Optimal model ən güclü model deyil — şəraitə ən uyğun modeldir. 400 şəkil, CPU mühiti və 1 həftəlik deadline şəraitində YOLOv8n ən rasional seçimdir. RT-DETR-in üstünlükləri (izdihamlı səhnələr, kiçik uzaq obyektlər) yalnız böyük dataset və GPU mühitində tam reallaşa bilər.
 ---
 
 ## Training Qeydləri
@@ -138,9 +177,9 @@ YOLOv8n seçildi çünki:
 | Seed | 42 |
 | Klass sayı | 4 |
 
-**Sərbəst parametrlər və əsaslandırma:**
+**Sərbəst hyperparametrlər və əsaslandırma:**
 
-| Parametr | Dəyər | Əsaslandırma |
+| Hyperparametr | Dəyər | Əsaslandırma |
 |---|---|---|
 | Learning rate (lr0) | 0.005 | Default 0.01-dən aşağı — pretrained model üçün kiçik LR daha stabil fine-tuning verir |
 | Optimizer | AdamW | Adaptiv LR ilə daha stabil konvergensiya |
@@ -251,7 +290,20 @@ Bütün loss-lar (box, cls, dfl) həm train, həm val setdə sabit azalır. Val 
 | VS Code + Jupyter | Kod yazmaq və notebook idarəetməsi |
 | Anaconda | Python environment idarəetməsi |
 | Claude (claude.ai) | Kod yazmaq, debug, konsept izahı |
+| CPU(ntel Core i5-1135G7 2.40GHz) | Reproducibility, Data idarəetməsi, Sessiya məhdudiyyəti |
 
+
+### Niyə lokal mühit, Colab/Kaggle yox?
+
+Bu layihə lokal Windows mühitində (CPU) icra edildi. Bunun bir neçə əsaslandırması var:
+
+**Reproducibility:** Lokal mühitdə `conda env`, paket versiyaları və bütün fayllar sabitdir. Colab-da session yenidən başladıqda mühit sıfırlanır, paketlər yenidən qurulur — bu reproducibility-ni çətinləşdirir.
+
+**Data idarəetməsi:** ~400 şəkil, CVAT annotasiyaları və nəticə faylları lokal olaraq idarə edildi. Colab-a hər sessiyada data yükləmək (Google Drive sync və ya upload) əlavə vaxt və komplekslik yaradardı.
+
+**Sessiya məhdudiyyəti:** Colab pulsuz hesabda GPU sessiyanı ~2-4 saatdan sonra kəsir.Yəni mən T4 GPU-dan istifadə etsəm və hər hansı bir problem yaransa və ya hər hansı hyperparameterləri dəyişmək istəsəm kodu yenidən run etməliyəm ki, buda zaman limitinin keçməsi ilə nəticələnə bilər və sessiya kəsilsəydi nəticələr itə bilərdi. Lokal mühitdə training fasiləsiz davam etdi.
+
+**Nəticə:** Training uzun çəkdi (~4 saat), amma mühit tam nəzarət altında idi, nəticələr etibarlı və reproducible oldu.
 ---
 
 ## Çətinliklər və Həllər
