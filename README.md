@@ -304,7 +304,8 @@ Bu layihə lokal Windows mühitində (CPU) icra edildi. Bunun bir neçə əsasla
 
 **Sessiya məhdudiyyəti:** Colab pulsuz hesabda GPU sessiyanı ~2-4 saatdan sonra kəsir.Yəni mən T4 GPU-dan istifadə etsəm və hər hansı bir problem yaransa və ya hər hansı hyperparameterləri dəyişmək istəsəm kodu yenidən run etməliyəm ki, buda zaman limitinin keçməsi ilə nəticələnə bilər və sessiya kəsilsəydi nəticələr itə bilərdi. Lokal mühitdə training fasiləsiz davam etdi.
 
-**Nəticə:** Training uzun çəkdi (~4 saat), amma mühit tam nəzarət altında idi, nəticələr etibarlı və reproducible oldu.
+**Nəticə:** 
+Training uzun çəkdi (~4 saat), amma mühit tam nəzarət altında idi, nəticələr etibarlı və reproducible oldu.
 ---
 
 ## Çətinliklər və Həllər
