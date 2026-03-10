@@ -288,17 +288,19 @@ Detect edilməyən şəkillərin analizi üç əsas xəta kateqoriyasını ortay
 
 **Əsas promptlar və istifadə:**
 
-1. *"PASCAL VOC XML-dən YOLO formatına çevirmə, hər klasdan bərabər sayda şəkil seçmə və train/val/test bölgüsü edən notebook yaz. Seed=42 istifadə et, class imbalance-a diqqət et"* → `01_data_prep.ipynb` kodu əsas götürülüb path-lar və parametrlər özüm tənzimlədim.
+1. *"PASCAL VOC XML-dən YOLO formatına çevirmə, hər klasdan bərabər sayda şəkil seçmə və train/val/test bölgüsü edən notebook yaz. Seed=42 istifadə et, class imbalance-a diqqət et"* → `01_data_prep.ipynb`(CVAT-dan əvvəl) kodu əsas götürülüb path-lar və parametrlər özüm tənzimlədim.
 
-2. *"CVAT YOLO 1.1 export-undan label-ları götür, val/test üçün VOC XML-dən avtomatik label yarat, data.yaml yarat və annotasiya statistikasını vizuallaşdır"* → `01_data_prep_part2.ipynb` kodu istifadə edildi, CVAT export strukturu debug mərhələsində əlavə tənzimləndi.
+2. *"CVAT YOLO 1.1 export-undan label-ları götür, val/test üçün VOC XML-dən avtomatik label yarat, data.yaml yarat və annotasiya statistikasını vizuallaşdır"* → `01_data_prep.ipynb`(CVAT-dan sonra) kodu istifadə edildi, CVAT export strukturu debug mərhələsində əlavə tənzimləndi.
 
 3. *"YOLOv8n-i CPU-da fine-tune edən notebook yaz. Windows-da Jupyter-də  multiprocessing xətasının qarşısını al, training progress-i izlə"* → `02_training.ipynb` kodu istifadə edildi. Hyperparameter seçimi (lr0, epochs, patience, flipud) müstəqil qərar verdim və hər birini əsaslandırdım.
 
 4. *"Test setində qiymətləndirmə notebook-u yaz: mAP, precision, recall, F1 klass üzrə göstər, inference sürəti ölç, PR curve çək, predicted bbox-ları vizuallaşdır, detect edilməyən şəkilləri ayrıca göstər"* → `03_evaluation.ipynb` kodu istifadə edildi. PR curve Ultralytics tərəfindən avtomatik yaranmadığı üçün `test_results.box` obyektindən manual olaraq çəkildi.
 
-5. *"Confusion matrix-dən və failure cases şəkillərindən konkret xəta kateqoriyalarını çıxar, hər xətanın texniki səbəbini izah et"* → Xəta analizi bölməsi bu müzakirə əsasında yazıldı.
+5. *"Confusion matrix-dən və failure cases şəkillərindən konkret xəta kateqoriyalarını çıxar"* → Xəta analizi bölməsi bu müzakirə əsasında yazıldı.
 
-**Müstəqil qərarlar:** Model seçimi, LLM-in bəzi ilkin tövsiyələrinə (epoch=50, lr0=0.01) baxmayaraq, 50 epoch-dan sonra val loss-un platoya çatdığını müşahidə edərək lr0=0.005 və epochs=75 ilə yenidən train etdim — mAP@0.5 0.436-dan 0.681-ə yüksəldi. flipud=0.0 qərarını da müstəqil verdim: avtomobillər real mühitdə heç vaxt üst-aşağı olmur, bu augmentasiya mənasızdır.
+LLM tərəfindən yazılmış bütün kodlar əvvəlcə nəzərdən keçirilib, lazımi yerlərdə düzəldilərək sonra fayllara yazıldı. Məsələn `01_data_prep.ipynb`-də LLM şəkilləri klasslara görə seçərkən hər şəkili yalnız bir klassa aid edirdi — amma PASCAL VOC-da bir şəkildə eyni anda həm car, həm bus ola bilər. Bu data itkisinə səbəb olurdu. Bunu müstəqil aşkar edərək deduplication məntiqini əlavə etdim: şəkil artıq seçilibsə, ikinci dəfə əlavə edilmir, beləliklə hər şəkil yalnız bir dəfə dataset-ə daxil olur.
+
+**Müstəqil qərarlar:** Model seçimi, LLM-in bəzi ilkin tövsiyələrinə (epoch=50, lr0=0.01) baxmayaraq, 50 epoch-dan sonra val loss-un platoya çatdığını müşahidə edərək lr0=0.005 və epochs=75 ilə yenidən train etdim — mAP@0.5 0.436-dan 0.681-ə yüksəldi. flipud=0.0 qərarını da müstəqil verdim: avtomobillər real mühitdə heç vaxt üst-aşağı olmur, bu augmentasiya mənasızdır. README.md-ni bəzi müzakilər çıxmaqla tamamilə özüm yazdım.
 
 ---
 
